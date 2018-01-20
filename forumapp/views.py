@@ -17,8 +17,30 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from forumapp.forms import ThreadCreateModelForm, ThreadResponseModelForm, \
     ThreadResponseDeleteForm, ThreadDeleteForm, LikeDislikeForm, BanUserForm, \
     PinThreadForm, StylizedUserCreationForm
+from forumapp.permissions import IsNotBanned
+from forumapp.serializers import ForumSerializer, ThreadSerializer
 from .models import Thread, ForumSection, ThreadResponse, Forum, LikeDislike, \
     ForumUser
+from rest_framework import viewsets, renderers, permissions
+
+
+class ForumViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Forum.objects.all()
+    serializer_class = ForumSerializer
+
+
+class ThreadViewSet(viewsets.ModelViewSet):
+    queryset = Thread.objects.all()
+    serializer_class = ThreadSerializer
+
+    permission_classes = (
+        permissions.IsAuthenticatedOrReadOnly,
+        IsNotBanned
+    )
+
+
+def signup_rest(request):
+    pass
 
 
 def signup(request):

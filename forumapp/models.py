@@ -16,7 +16,6 @@ class Forum(models.Model):
     description = models.TextField(max_length=200)
     section = models.ForeignKey(
         ForumSection,
-        null=True,
         on_delete=models.CASCADE
     )
 
@@ -26,8 +25,9 @@ class Forum(models.Model):
 
 class Thread(models.Model):
     name = models.CharField(max_length=100)
-    forum = models.ForeignKey(Forum, null=True, on_delete=models.CASCADE)
+    forum = models.ForeignKey(Forum, on_delete=models.CASCADE)
     pinned = models.BooleanField(default=False)
+    message = models.TextField(max_length=1000)
 
     def __str__(self):
         return self.name
@@ -43,9 +43,9 @@ class Thread(models.Model):
 
 
 class ThreadResponse(models.Model):
-    thread = models.ForeignKey(Thread, null=True, on_delete=models.CASCADE)
+    thread = models.ForeignKey(Thread, on_delete=models.CASCADE)
     created_datetime = models.DateTimeField(null=True)
-    responder = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
+    responder = models.ForeignKey(User, on_delete=models.CASCADE)
     message = models.TextField(max_length=1000)
     edited = models.BooleanField(default=False)
     order_in_thread = models.PositiveIntegerField(default=1)
@@ -65,13 +65,11 @@ class LikeDislike(models.Model):
     """
     user = models.ForeignKey(
         User,
-        null=True,
         on_delete=models.CASCADE
     )
     like = models.BooleanField(default=True)
     response = models.ForeignKey(
         ThreadResponse,
-        null=False,
         on_delete=models.CASCADE
     )
 

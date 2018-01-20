@@ -1,8 +1,17 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 
 from forumapp import views
 
+router = DefaultRouter()
+router.register('forums', views.ForumViewSet)
+router.register('threads', views.ThreadViewSet)
+
 urlpatterns = [
+    # Router path
+    path('rest/', include(router.urls)),
+
+    # Regular patterns
     path(
         '',
         views.index,
