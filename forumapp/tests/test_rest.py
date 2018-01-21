@@ -1,3 +1,4 @@
+import datetime
 import json
 from unittest import TestCase
 
@@ -5,7 +6,7 @@ from django.contrib.auth.models import User
 from rest_framework.reverse import reverse
 from rest_framework.test import APIRequestFactory, force_authenticate, APIClient
 
-from forumapp.models import Forum, Thread, ForumSection
+from forumapp.models import Forum, Thread, ForumSection, ForumUser
 
 
 class ForumSectionModelTest(TestCase):
@@ -24,10 +25,13 @@ class ForumSectionModelTest(TestCase):
             section=section
         )
 
-        cls.user = User.objects.create_user(
-            username="testuser",
-            email="testmail@mail.com",
+        user = User.objects.create_user(
+            username='testuser',
             password='zaq12wrx'
+        )
+
+        forum_user = ForumUser.objects.create(
+            user=user
         )
 
     def test_forum_get(self):
@@ -86,3 +90,29 @@ class ForumSectionModelTest(TestCase):
             'pinned': False,
             'message': 'message1',
         })
+
+    def test_create_thread_auth_token_while_banned(self):
+        forum_user = ForumUser.objects.get(id=1)
+        forum_user.banned_until += datetime.timedelta(days=30)
+
+        client = APIClient()
+        response = client.post(
+            '/forumapp/api-token-auth/',
+            {
+                'username': 'testuser',
+                'password': 'zaq12wrx'
+            }
+        )
+        token = response.data['token']
+
+        response_thread = client.post(
+            reverse('thread-list'),
+            {
+                'name': 'threadname',
+                'forum': 1,
+                'message': 'message1',
+            },
+            HTTP_AUTHORIZATION=f'JWT {token}'
+        )
+
+        self.assertEquals(response_thread.status_code, 403)

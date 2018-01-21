@@ -4,6 +4,16 @@ from django.db import models
 from django.utils import timezone
 
 
+class ForumUser(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    banned_until = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        permissions = [
+            ('can_ban_users', 'Can ban any user.')
+        ]
+
+
 class ForumSection(models.Model):
     name = models.CharField(max_length=30)
 
@@ -25,9 +35,12 @@ class Forum(models.Model):
 
 class Thread(models.Model):
     name = models.CharField(max_length=100)
-    forum = models.ForeignKey(Forum, on_delete=models.CASCADE)
+    forum = models.ForeignKey(
+        Forum, on_delete=models.CASCADE,
+    )
     pinned = models.BooleanField(default=False)
     message = models.TextField(max_length=1000)
+    creator = models.ForeignKey(ForumUser, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
@@ -48,7 +61,7 @@ class ThreadResponse(models.Model):
     responder = models.ForeignKey(User, on_delete=models.CASCADE)
     message = models.TextField(max_length=1000)
     edited = models.BooleanField(default=False)
-    order_in_thread = models.PositiveIntegerField(default=1)
+    # order_in_thread = models.PositiveIntegerField(default=1)
 
     class Meta:
         permissions = [('can_remove_any_response', 'Can remove ANY response.')]
@@ -72,13 +85,3 @@ class LikeDislike(models.Model):
         ThreadResponse,
         on_delete=models.CASCADE
     )
-
-
-class ForumUser(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    banned_until = models.DateTimeField(default=timezone.now)
-
-    class Meta:
-        permissions = [
-            ('can_ban_users', 'Can ban any user.')
-        ]

@@ -3,25 +3,26 @@ import datetime
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from django.contrib.auth.views import LogoutView
 from django.core.paginator import Paginator
-from django.db.models import Min, Max
+from django.db import IntegrityError
+from django.db.models import Max
 from django.http import HttpResponseRedirect, \
-    HttpResponseForbidden, HttpResponse, JsonResponse, response
+    HttpResponseForbidden, HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views.decorators.csrf import ensure_csrf_cookie
+from rest_framework import viewsets, permissions, mixins, generics
+from rest_framework.decorators import api_view
 
 from forumapp.forms import ThreadCreateModelForm, ThreadResponseModelForm, \
-    ThreadResponseDeleteForm, ThreadDeleteForm, LikeDislikeForm, BanUserForm, \
+    ThreadResponseDeleteForm, ThreadDeleteForm, BanUserForm, \
     PinThreadForm, StylizedUserCreationForm
-from forumapp.permissions import IsNotBanned
-from forumapp.serializers import ForumSerializer, ThreadSerializer
+from forumapp.permissions import IsNotBanned, IsOwnerOrReadOnly
+from forumapp.serializers import ForumSerializer, ThreadSerializer, \
+    ForumUserSerializer, ThreadResponseSerializer, LikeDislikeSerializer
 from .models import Thread, ForumSection, ThreadResponse, Forum, LikeDislike, \
     ForumUser
-from rest_framework import viewsets, renderers, permissions
 
 
 class ForumViewSet(viewsets.ReadOnlyModelViewSet):
@@ -35,12 +36,76 @@ class ThreadViewSet(viewsets.ModelViewSet):
 
     permission_classes = (
         permissions.IsAuthenticatedOrReadOnly,
-        IsNotBanned
+        IsNotBanned,
+        IsOwnerOrReadOnly
     )
 
 
+class ForumUserViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = ForumUser.objects.all()
+    serializer_class = ForumUserSerializer
+
+
+class ThreadResponseViewSet(viewsets.ModelViewSet):
+    queryset = ThreadResponse.objects.all()
+    serializer_class = ThreadResponseSerializer
+
+
+class LikeDislikeViewSet(viewsets.ModelViewSet):
+    queryset = LikeDislike.objects.all()
+    serializer_class = LikeDislikeSerializer
+
+
+# @permission_required('forumapp.can_ban_users')
+class BanUser(
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    generics.GenericAPIView
+):
+    queryset = ForumUser.objects.all()
+    serializer_class = ForumUserSerializer
+
+    def get(self, request, *args, **kwargs):
+        print(request)
+        print(args)
+        print(kwargs)
+        return self.retrieve(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        print(request.data)
+        return self.update(request, *args, **kwargs)
+
+
+@api_view(["POST"])
 def signup_rest(request):
-    pass
+    if request.method == "POST":
+        try:
+            password = request.data['password']
+        except KeyError:
+            return JsonResponse(
+                {'password': ["This field is required."]},
+                status=400
+            )
+
+        if len(password) < 6:
+            return JsonResponse(
+                {'password': ["Password must be at least 6 characters long"]},
+                status=400
+            )
+
+        try:
+            user = User.objects.create_user(
+                username=request.data['username'],
+                password=password
+            )
+            forum_user = ForumUser.objects.create(user=user)
+        except IntegrityError:
+            return JsonResponse(
+                {'error': "Username already taken."},
+                status=409
+            )
+        serializer = ForumUserSerializer(forum_user)
+        return JsonResponse(serializer.data)
 
 
 def signup(request):

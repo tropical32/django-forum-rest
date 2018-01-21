@@ -7,10 +7,31 @@ from forumapp import views
 router = DefaultRouter()
 router.register('forums', views.ForumViewSet)
 router.register('threads', views.ThreadViewSet)
+router.register('users', views.ForumUserViewSet)
+router.register('threadresponses', views.ThreadResponseViewSet)
+router.register('likesdislikes', views.LikeDislikeViewSet)
 
 urlpatterns = [
     # Router path
     path('rest/', include(router.urls)),
+
+    # Class based paths
+    path(
+        'rest/rest_ban_user/<int:pk>/',
+        views.BanUser.as_view(),
+        name='rest-ban-user'
+    ),
+
+    path(
+        'rest/signup/',
+        views.signup_rest,
+        name='rest-signup'
+    ),
+    # path(
+    #     'rest/signup/',
+    #     views.SignUp,
+    #     name='rest-signup'
+    # ),
 
     # Authentication
     path('api-token-auth/', obtain_jwt_token),
