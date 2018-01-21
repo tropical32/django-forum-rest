@@ -1,5 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from rest_framework_jwt.views import obtain_jwt_token, verify_jwt_token
 
 from forumapp import views
 
@@ -10,6 +11,10 @@ router.register('threads', views.ThreadViewSet)
 urlpatterns = [
     # Router path
     path('rest/', include(router.urls)),
+
+    # Authentication
+    path('api-token-auth/', obtain_jwt_token),
+    path('api-token-verify/', verify_jwt_token),
 
     # Regular patterns
     path(

@@ -2,6 +2,7 @@ import json
 from unittest import TestCase
 
 from django.contrib.auth.models import User
+from rest_framework.reverse import reverse
 from rest_framework.test import APIRequestFactory, force_authenticate, APIClient
 
 from forumapp.models import Forum, Thread, ForumSection
@@ -23,9 +24,15 @@ class ForumSectionModelTest(TestCase):
             section=section
         )
 
+        cls.user = User.objects.create_user(
+            username="testuser",
+            email="testmail@mail.com",
+            password='zaq12wrx'
+        )
+
     def test_forum_get(self):
         client = APIClient()
-        response = client.get('/forumapp/rest/forums/')
+        response = client.get(reverse('forum-list'))
         self.assertEqual(json.loads(response.content), [
             {
                 'name': 'Forum1',
@@ -39,10 +46,10 @@ class ForumSectionModelTest(TestCase):
             }
         ])
 
-    def test_create_thread(self):
+    def test_create_thread_unauth(self):
         client = APIClient()
         response = client.post(
-            '/forumapp/rest/threads/', {
+            reverse('thread-list'), {
                 'name': 'thread1',
                 'forum': 1,
                 'pinned': True,
@@ -50,4 +57,32 @@ class ForumSectionModelTest(TestCase):
         )
 
         # user not logged-in
-        self.assertEquals(response.status_code, 403)
+        self.assertEquals(response.status_code, 401)
+
+    def test_create_thread_auth_token(self):
+        client = APIClient()
+        response = client.post(
+            '/forumapp/api-token-auth/',
+            {
+                'username': 'testuser',
+                'password': 'zaq12wrx'
+            }
+        )
+        token = response.data['token']
+
+        response_thread = client.post(
+            reverse('thread-list'),
+            {
+                'name': 'threadname',
+                'forum': 1,
+                'message': 'message1',
+            },
+            HTTP_AUTHORIZATION=f'JWT {token}'
+        )
+
+        self.assertEquals(json.loads(response_thread.content), {
+            'name': 'threadname',
+            'forum': 1,
+            'pinned': False,
+            'message': 'message1',
+        })
