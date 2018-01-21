@@ -23,6 +23,12 @@ urlpatterns = [
     ),
 
     path(
+        'rest/pin_thread/<int:pk>/',
+        views.PinThread.as_view(),
+        name='pin-thread'
+    ),
+
+    path(
         'rest/signup/',
         views.signup_rest,
         name='rest-signup'

@@ -18,7 +18,7 @@ from rest_framework.decorators import api_view
 from forumapp.forms import ThreadCreateModelForm, ThreadResponseModelForm, \
     ThreadResponseDeleteForm, ThreadDeleteForm, BanUserForm, \
     PinThreadForm, StylizedUserCreationForm
-from forumapp.permissions import IsNotBanned, IsOwnerOrReadOnly
+from forumapp.permissions import IsNotBanned, IsOwnerOrReadOnly, CanPinThreads
 from forumapp.serializers import ForumSerializer, ThreadSerializer, \
     ForumUserSerializer, ThreadResponseSerializer, LikeDislikeSerializer
 from .models import Thread, ForumSection, ThreadResponse, Forum, LikeDislike, \
@@ -66,14 +66,34 @@ class BanUser(
     serializer_class = ForumUserSerializer
 
     def get(self, request, *args, **kwargs):
-        print(request)
-        print(args)
-        print(kwargs)
         return self.retrieve(request, *args, **kwargs)
 
     def put(self, request, *args, **kwargs):
-        print(request.data)
+        if 'banned_until' not in request.data:
+            return JsonResponse(
+                {'banned_until': "Provide banned_until datetime."},
+                status=400
+            )
         return self.update(request, *args, **kwargs)
+
+
+class PinThread(
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    generics.GenericAPIView
+):
+    queryset = Thread.objects.all()
+    serializer_class = ThreadSerializer
+    permission_classes = (CanPinThreads,)
+
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        thread = Thread.objects.get(id=kwargs['pk'])
+        thread.pinned = not thread.pinned
+        thread.save()
+        return self.retrieve(request, *args, **kwargs)
 
 
 @api_view(["POST"])
@@ -101,7 +121,7 @@ def signup_rest(request):
             forum_user = ForumUser.objects.create(user=user)
         except IntegrityError:
             return JsonResponse(
-                {'error': "Username already taken."},
+                {'username': "Username already taken."},
                 status=409
             )
         serializer = ForumUserSerializer(forum_user)
