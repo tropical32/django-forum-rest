@@ -1,4 +1,5 @@
 import datetime
+import json
 
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
@@ -13,7 +14,8 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import viewsets, permissions, mixins, generics
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 
 from forumapp.forms import ThreadCreateModelForm, ThreadResponseModelForm, \
     ThreadResponseDeleteForm, ThreadDeleteForm, BanUserForm, \
@@ -51,11 +53,6 @@ class ThreadResponseViewSet(viewsets.ModelViewSet):
     serializer_class = ThreadResponseSerializer
 
 
-class LikeDislikeViewSet(viewsets.ModelViewSet):
-    queryset = LikeDislike.objects.all()
-    serializer_class = LikeDislikeSerializer
-
-
 # @permission_required('forumapp.can_ban_users')
 class BanUser(
     mixins.RetrieveModelMixin,
@@ -64,6 +61,8 @@ class BanUser(
 ):
     queryset = ForumUser.objects.all()
     serializer_class = ForumUserSerializer
+
+    # TODO add permission
 
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -208,7 +207,7 @@ def forum(request, pk):
     )
 
 
-@login_required
+# @login_required
 @permission_required('forumapp.can_pin_threads')
 def pin_thread(request, fpk, tpk):
     form = PinThreadForm()
@@ -289,50 +288,50 @@ def ban_user(request, pk):
     )
 
 
-@login_required
-@ensure_csrf_cookie
-def like_dislike_post(request, fpk, tpk, ppk, upvote):
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, ])
+def like_dislike_post(request, pk):
     """
-    This view is responsible for liking/disliking a response
-    :param request request
-    :param fpk: forum primary key
-    :param tpk: thread primary key
-    :param ppk: post primary key
-    :param upvote: 0 or 1 - like or dislike
+    This function is used to like or dislike a post.
+    :param pk id of the response
+    :param like whether a like has been sent; dislike otherwise
     """
-    if request.method == 'POST':
-        try:
-            like_dislike_obj = LikeDislike.objects.get(
-                response=ThreadResponse.objects.get(id=ppk),
-                user=request.user
-            )
 
-            if like_dislike_obj.like == upvote:
-                like_dislike_obj.delete()
-                return JsonResponse({
-                    'pk': ppk,
-                    'upvote': upvote
-                }, status=202)
-            else:
-                like_dislike_obj.like = upvote
-                like_dislike_obj.save()
-                return JsonResponse({
-                    'to': upvote,
-                    'pk': ppk
-                }, status=200)
+    if 'like' not in request.data:
+        return JsonResponse(
+            {'like': 'Provide like parameter.'},
+            status=400
+        )
 
-        except LikeDislike.DoesNotExist:
-            like_dislike_obj = LikeDislike.objects.create(
-                response=ThreadResponse.objects.get(id=ppk),
-                user=request.user
-            )
-            like_dislike_obj.like = upvote
-            like_dislike_obj.save()
+    like = True if request.data['like'].lower() == 'true' else False
 
-            return JsonResponse({
-                'like': upvote,
-                'pk': ppk
-            }, status=201)
+    try:
+        like_dislike_obj = LikeDislike.objects.get(
+            response=ThreadResponse.objects.get(id=pk),
+            user=request.user
+        )
+
+        if like_dislike_obj.like == like:
+            like_dislike_obj.delete()
+            return JsonResponse({'id': pk}, status=204)
+        else:
+            print("Like", like)
+            print("obj", like_dislike_obj.like)
+            like_dislike_obj.like = like
+            like_obj = like_dislike_obj.save()
+            like_serializer = LikeDislikeSerializer(like_obj)
+            return JsonResponse(like_serializer.data, status=200)
+
+    except LikeDislike.DoesNotExist:
+        like_dislike_obj = LikeDislike.objects.create(
+            response=ThreadResponse.objects.get(id=pk),
+            user=request.user
+        )
+        like_dislike_obj.like = like
+        like_dislike_obj.save()
+        like_serializer = LikeDislikeSerializer(like_dislike_obj)
+
+        return JsonResponse(like_serializer.data, status=201)
 
 
 @login_required

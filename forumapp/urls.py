@@ -9,7 +9,7 @@ router.register('forums', views.ForumViewSet)
 router.register('threads', views.ThreadViewSet)
 router.register('users', views.ForumUserViewSet)
 router.register('threadresponses', views.ThreadResponseViewSet)
-router.register('likesdislikes', views.LikeDislikeViewSet)
+# router.register('likesdislikes', views.LikeDislikeViewSet)
 
 urlpatterns = [
     # Router path
@@ -32,6 +32,12 @@ urlpatterns = [
         'rest/signup/',
         views.signup_rest,
         name='rest-signup'
+    ),
+
+    path(
+        'rest/likedislike/<int:pk>/',
+        views.like_dislike_post,
+        name='rest-likedislike'
     ),
     # path(
     #     'rest/signup/',
