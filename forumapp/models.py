@@ -41,6 +41,7 @@ class Thread(models.Model):
     pinned = models.BooleanField(default=False)
     message = models.TextField(max_length=1000)
     creator = models.ForeignKey(ForumUser, on_delete=models.CASCADE)
+    created_datetime = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return self.name
@@ -57,7 +58,7 @@ class Thread(models.Model):
 
 class ThreadResponse(models.Model):
     thread = models.ForeignKey(Thread, on_delete=models.CASCADE)
-    created_datetime = models.DateTimeField(null=True)
+    created_datetime = models.DateTimeField(default=timezone.now)
     responder = models.ForeignKey(User, on_delete=models.CASCADE)
     message = models.TextField(max_length=1000)
     edited = models.BooleanField(default=False)

@@ -22,7 +22,8 @@ from forumapp.forms import ThreadCreateModelForm, ThreadResponseModelForm, \
     PinThreadForm, StylizedUserCreationForm
 from forumapp.permissions import IsNotBanned, IsOwnerOrReadOnly, CanPinThreads
 from forumapp.serializers import ForumSerializer, ThreadSerializer, \
-    ForumUserSerializer, ThreadResponseSerializer, LikeDislikeSerializer
+    ForumUserSerializer, ThreadResponseSerializer, LikeDislikeSerializer, \
+    ForumSectionSerializer
 from .models import Thread, ForumSection, ThreadResponse, Forum, LikeDislike, \
     ForumUser
 
@@ -30,6 +31,11 @@ from .models import Thread, ForumSection, ThreadResponse, Forum, LikeDislike, \
 class ForumViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Forum.objects.all()
     serializer_class = ForumSerializer
+
+
+class ForumSectionViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = ForumSection.objects.all()
+    serializer_class = ForumSectionSerializer
 
 
 class ThreadViewSet(viewsets.ModelViewSet):
@@ -99,6 +105,30 @@ class PinThread(
         thread.pinned = not thread.pinned
         thread.save()
         return self.retrieve(request, *args, **kwargs)
+
+
+@api_view(['GET'])
+def forum_threads(request, pk):
+    try:
+        Forum.objects.get(id=pk)
+    except Forum.DoesNotExist:
+        return JsonResponse({'pk': 'Forum does not exist.'}, status=404)
+
+    threads = Thread.objects.filter(forum=pk)
+    serializer = ThreadSerializer(threads, many=True)
+    return JsonResponse(serializer.data, safe=False)
+
+
+@api_view(['GET'])
+def thread_responses(request, pk):
+    try:
+        Thread.objects.get(id=pk)
+    except Thread.DoesNotExist:
+        return JsonResponse({'pk': 'Thread does not exist.'}, status=404)
+
+    responses = ThreadResponse.objects.filter(thread=pk)
+    serializer = ThreadResponseSerializer(responses, many=True)
+    return JsonResponse(serializer.data, safe=False)
 
 
 @api_view(["POST"])

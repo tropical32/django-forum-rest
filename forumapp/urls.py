@@ -7,6 +7,7 @@ from forumapp import views
 router = DefaultRouter()
 router.register('forums', views.ForumViewSet)
 router.register('threads', views.ThreadViewSet)
+router.register('sections', views.ForumSectionViewSet)
 router.register('users', views.ForumUserViewSet)
 router.register('threadresponses', views.ThreadResponseViewSet)
 # router.register('likesdislikes', views.LikeDislikeViewSet)
@@ -50,6 +51,18 @@ urlpatterns = [
         'rest/user_view/<int:pk>/',
         views.user_view,
         name='user-view'
+    ),
+
+    path(
+        'rest/forum_threads/<int:pk>/',
+        views.forum_threads,
+        name='rest-forum-threads'
+    ),
+
+    path(
+        'rest/thread_responses/<int:pk>/',
+        views.thread_responses,
+        name='rest-thread-responses'
     ),
 
     # path(
