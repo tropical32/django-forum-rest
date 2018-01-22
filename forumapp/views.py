@@ -52,6 +52,12 @@ class ThreadResponseViewSet(viewsets.ModelViewSet):
     queryset = ThreadResponse.objects.all()
     serializer_class = ThreadResponseSerializer
 
+    permission_classes = (
+        permissions.IsAuthenticatedOrReadOnly,
+        IsNotBanned,
+        IsOwnerOrReadOnly
+    )
+
 
 # @permission_required('forumapp.can_ban_users')
 class BanUser(
@@ -511,22 +517,33 @@ def edit_post(request, fpk, tpk, ppk):
         )
 
 
+@api_view(["GET"])
 def validate_username(request):
-    username = request.GET.get('username')
+    if 'username' not in request.data:
+        return JsonResponse(
+            {'username': "Provide username parameter."},
+            status=400
+        )
+
+    username = request.data['username']
     data = {
         'is_taken': User.objects.filter(username__iexact=username).exists()
     }
     return JsonResponse(data)
 
 
+@api_view(["GET"])
 def user_view(request, pk):
-    viewed_user = User.objects.get(id=pk)
+    try:
+        forum_user = ForumUser.objects.get(id=pk)
+    except ForumUser.DoesNotExist:
+        return JsonResponse({'user': 'User does not exist.'}, status=404)
     user_responses = ThreadResponse.objects.filter(
         responder=pk
     ).exclude(thread__isnull=True)
 
     banned_until = None
-    forum_user = ForumUser.objects.get(user=viewed_user)
+    # forum_user = ForumUser.objects.get(user=viewed_user)
     if forum_user.banned_until.replace(tzinfo=None) > datetime.datetime.now():
         banned_until = forum_user.banned_until
 
@@ -534,16 +551,14 @@ def user_view(request, pk):
     if request.user.has_perm('forumapp.can_ban_users'):
         can_ban = True
 
-    return render(
-        request,
-        'forumapp/user_view.html',
-        context={
-            'viewed_user': viewed_user,
-            'user_responses': user_responses,
-            'banned_until': banned_until,
-            'can_ban': can_ban
-        }
-    )
+    user_responses = [resp.id for resp in user_responses]
+
+    return JsonResponse({
+        'viewed_user': forum_user.user.username,
+        'user_responses': user_responses,
+        'banned_until': banned_until,
+        'can_ban': can_ban
+    })
 
 
 @login_required

@@ -39,6 +39,19 @@ urlpatterns = [
         views.like_dislike_post,
         name='rest-likedislike'
     ),
+
+    path(
+        'rest/validate_username/',
+        views.validate_username,
+        name='validate-username'
+    ),
+
+    path(
+        'rest/user_view/<int:pk>/',
+        views.user_view,
+        name='user-view'
+    ),
+
     # path(
     #     'rest/signup/',
     #     views.SignUp,
