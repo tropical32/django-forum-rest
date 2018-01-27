@@ -62,6 +62,32 @@ class ThreadResponseViewSet(viewsets.ModelViewSet):
         IsOwnerOrReadOnly
     )
 
+    def create(self, request, *args, **kwargs):
+        errors = {}
+        if 'thread' not in request.data:
+            errors['thread'] = ['Thread is required.']
+        if 'message' not in request.data:
+            errors['message'] = ["Message is required."]
+
+        if errors:
+            return JsonResponse(errors, status=400)
+
+        try:
+            thread = Thread.objects.get(id=request.data['thread'])
+        except Thread.DoesNotExist:
+            return JsonResponse({
+                'thread': ['Specified thread does not exist.']
+            }, status=404)
+
+        response = ThreadResponse.objects.create(
+            thread=thread,
+            responder=request.user,
+            message=request.data['message'],
+        )
+
+        serializer = ThreadResponseSerializer(response)
+        return JsonResponse(serializer.data, status=201)
+
 
 # @permission_required('forumapp.can_ban_users')
 class BanUser(
