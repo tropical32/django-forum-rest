@@ -66,8 +66,10 @@ class ThreadResponseViewSet(viewsets.ModelViewSet):
         errors = {}
         if 'thread' not in request.data:
             errors['thread'] = ['Thread is required.']
-        if 'message' not in request.data:
+        if 'message' not in request.data or request.data['message'] == '':
             errors['message'] = ["Message is required."]
+        if len(request.data['message']) > 1000:
+            errors['message'] = "Message can't be longer than 1000 chars."
 
         if errors:
             return JsonResponse(errors, status=400)
