@@ -44,14 +44,14 @@ class ThreadResponseSerializer(serializers.ModelSerializer):
 
 
 class ForumUserSerializer(serializers.ModelSerializer):
-    # username = serializers.CharField(source='user.username')
+    username = serializers.CharField(source='user.username')
 
     class Meta:
         model = ForumUser
-        fields = ['user', 'banned_until']
+        fields = ['banned_until', 'username']
         extra_kwargs = {
             'user': {'read_only': True},
-            # 'username': {'read_only': True},
+            'username': {'read_only': True},
         }
 
 

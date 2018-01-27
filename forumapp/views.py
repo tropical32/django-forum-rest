@@ -132,23 +132,32 @@ def thread_responses(request, pk):
 @api_view(["POST"])
 def signup_rest(request):
     if request.method == "POST":
-        try:
-            password = request.data['password']
-        except KeyError:
-            return JsonResponse(
-                {'password': ["This field is required."]},
-                status=400
-            )
+        errors = {}
 
-        if len(password) < 6:
-            return JsonResponse(
-                {'password': ["Password must be at least 6 characters long"]},
-                status=400
-            )
+        if 'username' not in request.data:
+            errors['username'] = ['This field is required']
+        if 'password1' not in request.data:
+            errors['password1'] = ['This field is required.']
+        else:
+            if len(request.data['password1']) <= 6:
+                errors['password1'] = \
+                    ['Password must be at least 6 characters long.']
+
+        if 'password2' not in request.data:
+            errors['password2'] = ['This field is required.']
+        else:
+            if request.data['password1'] != request.data['password2']:
+                errors['password2'] = ["Passwords don't match."]
+
+        if errors:
+            return JsonResponse(errors, status=400)
+
+        password = request.data['password1']
+        username = request.data['username']
 
         try:
             user = User.objects.create_user(
-                username=request.data['username'],
+                username=username,
                 password=password
             )
             forum_user = ForumUser.objects.create(user=user)
