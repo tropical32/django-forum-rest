@@ -1,6 +1,6 @@
 from django.urls import path, include
+from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework.routers import DefaultRouter
-from rest_framework_jwt.views import obtain_jwt_token, verify_jwt_token
 
 from forumapp import views
 
@@ -29,17 +29,12 @@ urlpatterns = [
         name='pin-thread'
     ),
 
-    path(
-        'rest/signup/',
-        views.signup_rest,
-        name='rest-signup'
-    ),
+    path('rest/signup/', views.signup_rest, name='rest-signup'),
 
-    path(
-        'rest/likedislike/<int:pk>/',
-        views.like_dislike_post,
-        name='rest-likedislike'
-    ),
+    path('rest/likedislike/<int:pk>/',
+         views.like_dislike_post,
+         name='rest-likedislike'
+         ),
 
     path(
         'rest/validate_username/',
@@ -47,11 +42,7 @@ urlpatterns = [
         name='validate-username'
     ),
 
-    path(
-        'rest/user_view/<int:pk>/',
-        views.user_view,
-        name='user-view'
-    ),
+    path('rest/user_view/<int:pk>/', views.user_view, name='user-view'),
 
     path(
         'rest/forum_threads/<int:pk>/',
@@ -65,6 +56,8 @@ urlpatterns = [
         name='rest-thread-responses'
     ),
 
+    path('rest/logout/', views.logout, name='rest-logout'),
+
     # path(
     #     'rest/signup/',
     #     views.SignUp,
@@ -72,8 +65,8 @@ urlpatterns = [
     # ),
 
     # Authentication
-    path('api-token-auth/', obtain_jwt_token),
-    path('api-token-verify/', verify_jwt_token),
+    path('rest/api-token-auth/', obtain_auth_token, name='rest-api-token-auth'),
+    # path('api-token-verify/', verify_jwt_token),
 
     # Regular patterns
     path(
