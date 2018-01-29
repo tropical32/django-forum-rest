@@ -4,11 +4,10 @@ from forumapp.models import Forum, Thread, ForumUser, ThreadResponse, \
     LikeDislike, ForumSection
 
 
-class ForumSerializer(serializers.ModelSerializer):
+class ForumDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Forum
         fields = ('id', 'name', 'description', 'section', 'thread_set')
-        # fields = '__all__'
 
 
 class ForumSectionSerializer(serializers.ModelSerializer):
@@ -23,13 +22,25 @@ class ThreadSerializer(serializers.ModelSerializer):
         # fields = ('name', 'forum', 'pinned', 'threadresponse_set')
         fields = (
             'name', 'forum', 'pinned', 'message',
-            'creator', 'id', 'created_datetime'
+            'creator', 'id', 'created_datetime', 'last_activity'
         )
         # fields = '__all__'
         extra_kwargs = {
             'pinned': {'read_only': True},
             'id': {'read_only': True},
+            'creator': {'read_only': True},
         }
+
+
+class ForumListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Forum
+        fields = (
+            'id',
+            'name',
+            'description',
+            'section',
+        )
 
 
 class ThreadResponseSerializer(serializers.ModelSerializer):
@@ -48,10 +59,11 @@ class ForumUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ForumUser
-        fields = ['banned_until', 'username']
+        fields = ['banned_until', 'username', 'id']
         extra_kwargs = {
             'user': {'read_only': True},
             'username': {'read_only': True},
+            'id': {'read_only': True},
         }
 
 

@@ -42,6 +42,7 @@ class Thread(models.Model):
     message = models.TextField(max_length=1000)
     creator = models.ForeignKey(ForumUser, on_delete=models.CASCADE)
     created_datetime = models.DateTimeField(default=timezone.now)
+    last_activity = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return self.name
@@ -59,7 +60,7 @@ class Thread(models.Model):
 class ThreadResponse(models.Model):
     thread = models.ForeignKey(Thread, on_delete=models.CASCADE)
     created_datetime = models.DateTimeField(default=timezone.now)
-    responder = models.ForeignKey(User, on_delete=models.CASCADE)
+    responder = models.ForeignKey(ForumUser, on_delete=models.CASCADE)
     message = models.TextField(max_length=1000, null=False)
     edited = models.BooleanField(default=False)
     # order_in_thread = models.PositiveIntegerField(default=1)
@@ -78,7 +79,7 @@ class LikeDislike(models.Model):
     response - specifies the associated response
     """
     user = models.ForeignKey(
-        User,
+        ForumUser,
         on_delete=models.CASCADE
     )
     like = models.BooleanField(default=True)
