@@ -84,11 +84,11 @@ urlpatterns = [
         views.forum,
         name='forum'
     ),
-    path(
-        'user/<int:pk>',
-        views.user_view,
-        name='user-view'
-    ),
+    # path(
+    #     'user/<int:pk>',
+    #     views.user_view,
+    #     name='user-view'
+    # ),
     path(
         'user/<int:pk>/ban',
         views.ban_user,

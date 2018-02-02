@@ -116,6 +116,44 @@ class ForumUserViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ForumUser.objects.all()
     serializer_class = ForumUserSerializer
 
+    def retrieve(self, request, *args, **kwargs):
+        pk = kwargs['pk']
+        try:
+            forum_user = ForumUser.objects.get(id=pk)
+        except ForumUser.DoesNotExist:
+            return JsonResponse({'user': 'User does not exist.'}, status=404)
+
+        user_responses = ThreadResponse.objects.filter(
+            responder=pk
+        ).exclude(thread__isnull=True)
+
+        user_threads = Thread.objects.filter(
+            creator=pk
+        )
+
+        banned_until = None
+        if forum_user.banned_until.replace(
+            tzinfo=None
+        ) > datetime.datetime.now():
+            banned_until = forum_user.banned_until
+
+        can_ban = False
+        if request.user.has_perm('forumapp.can_ban_users'):
+            can_ban = True
+
+        user_responses = [resp.id for resp in user_responses]
+        user_threads = [thread.id for thread in user_threads]
+
+        return JsonResponse({
+            'username': forum_user.user.username,
+            'user_responses': user_responses,
+            'user_threads': user_threads,
+            'banned_until': banned_until,
+            'can_ban': can_ban,
+            'id': forum_user.id
+        })
+        # return super().retrieve(request, *args, **kwargs)
+
 
 class ThreadResponseViewSet(viewsets.ModelViewSet):
     queryset = ThreadResponse.objects.all()
