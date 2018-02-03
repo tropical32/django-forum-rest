@@ -133,7 +133,7 @@ class ForumUserViewSet(viewsets.ReadOnlyModelViewSet):
 
         banned_until = None
         if forum_user.banned_until.replace(
-            tzinfo=None
+                tzinfo=None
         ) > datetime.datetime.now():
             banned_until = forum_user.banned_until
 
@@ -262,6 +262,36 @@ def thread_responses(request, pk):
     responses = ThreadResponse.objects.filter(thread=pk)
     serializer = ThreadResponseSerializer(responses, many=True)
     return JsonResponse(serializer.data, safe=False)
+
+
+@api_view(["GET"])
+def threads_bulk(request):
+    if 'threads[]' not in request.query_params:
+        return JsonResponse(
+            {'threads': ['Provide a list of threads']},
+            status=400
+        )
+
+    ids = request.query_params.getlist('threads[]')
+    ids = list(map(int, ids))
+    threads = Thread.objects.filter(id__in=ids)
+    threads_serialized = ThreadSerializer(threads, many=True)
+    return Response(threads_serialized.data)
+
+
+@api_view(["GET"])
+def responses_bulk(request):
+    if 'responses[]' not in request.query_params:
+        return JsonResponse(
+            {'responses': ['Provide a list of responses.']},
+            status=400
+        )
+
+    ids = request.query_params.getlist('responses[]')
+    ids = list(map(int, ids))
+    responses = ThreadResponse.objects.filter(id__in=ids)
+    responses_serialized = ThreadResponseSerializer(responses, many=True)
+    return Response(responses_serialized.data)
 
 
 @api_view(["POST"])

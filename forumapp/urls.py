@@ -49,6 +49,12 @@ urlpatterns = [
         views.forum_threads,
         name='rest-forum-threads'
     ),
+    path('rest/threads_bulk/', views.threads_bulk, name='rest-threads-bulk'),
+    path(
+        'rest/responses_bulk/',
+        views.responses_bulk,
+        name='rest-responses-bulk'
+    ),
 
     path(
         'rest/thread_responses/<int:pk>/',
