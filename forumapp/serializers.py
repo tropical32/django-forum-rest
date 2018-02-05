@@ -4,12 +4,6 @@ from forumapp.models import Forum, Thread, ForumUser, ThreadResponse, \
     LikeDislike, ForumSection
 
 
-class ForumDetailSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Forum
-        fields = ('id', 'name', 'description', 'section', 'thread_set')
-
-
 class ForumSectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = ForumSection
@@ -22,7 +16,8 @@ class ThreadSerializer(serializers.ModelSerializer):
         # fields = ('name', 'forum', 'pinned', 'threadresponse_set')
         fields = (
             'name', 'forum', 'pinned', 'message',
-            'creator', 'id', 'created_datetime', 'last_activity'
+            'creator', 'id', 'created_datetime', 'last_activity',
+            'threadresponse_set'
         )
         # fields = '__all__'
         extra_kwargs = {
@@ -32,7 +27,7 @@ class ThreadSerializer(serializers.ModelSerializer):
         }
 
 
-class ForumListSerializer(serializers.ModelSerializer):
+class ForumSerializer(serializers.ModelSerializer):
     class Meta:
         model = Forum
         fields = (
@@ -40,6 +35,7 @@ class ForumListSerializer(serializers.ModelSerializer):
             'name',
             'description',
             'section',
+            'thread_set'
         )
 
 

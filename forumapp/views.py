@@ -6,8 +6,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db import IntegrityError
-from django.db.models import Max, Count, F, Q
-from django.db.models.query import QuerySet
+from django.db.models import Max
 from django.http import HttpResponseRedirect, \
     HttpResponseForbidden, HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
@@ -20,44 +19,18 @@ from rest_framework.response import Response
 from forumapp.forms import ThreadCreateModelForm, ThreadResponseModelForm, \
     ThreadResponseDeleteForm, ThreadDeleteForm, BanUserForm, \
     PinThreadForm, StylizedUserCreationForm
-from forumapp.permissions import IsNotBanned, IsOwnerOrReadOnly, CanPinThreads
+from forumapp.permissions import IsNotBanned, IsOwnerOrReadOnly, CanPinThreads, \
+    CanBanUsers
 from forumapp.serializers import ThreadSerializer, \
     ForumUserSerializer, ThreadResponseSerializer, LikeDislikeSerializer, \
-    ForumSectionSerializer, ForumListSerializer, ForumDetailSerializer
+    ForumSerializer, ForumSectionSerializer
 from .models import Thread, ForumSection, ThreadResponse, Forum, LikeDislike, \
     ForumUser
 
 
 class ForumViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Forum.objects.all()
-    serializer_class = ForumListSerializer
-
-    def list(self, request, *args, **kwargs):
-        # threads = Thread.objects.values('forum').annotate(
-        #     latest_thread=Max('last_activity')
-        # )
-        # threads = Thread.objects.values(
-        #     'forum'
-        # ).annotate(
-        #     thread=F('id')
-        # ).order_by('last_activity')
-
-        threads = Thread.objects.values_list('forum', flat=True).distinct()
-        # print(threads)
-
-        query = Forum.objects.all().annotate(
-            latest_thread=Max('thread')
-        )
-        # ).order_by('thread__last_activity')
-        # print(query[0].latest_thread)
-
-        queryset = Forum.objects.all()
-        serializer = ForumListSerializer(queryset, many=True)
-        return Response(serializer.data)
-
-    def retrieve(self, request, *args, **kwargs):
-        self.serializer_class = ForumDetailSerializer
-        return super(ForumViewSet, self).retrieve(request, *args, **kwargs)
+    serializer_class = ForumSerializer
 
 
 class ForumSectionViewSet(viewsets.ReadOnlyModelViewSet):
@@ -198,19 +171,16 @@ class ThreadResponseViewSet(viewsets.ModelViewSet):
         return JsonResponse(serializer.data, status=201)
 
 
-# @permission_required('forumapp.can_ban_users')
 class BanUser(
-    mixins.RetrieveModelMixin,
     mixins.UpdateModelMixin,
     generics.GenericAPIView
 ):
     queryset = ForumUser.objects.all()
     serializer_class = ForumUserSerializer
+    permission_classes = (CanBanUsers,)
 
-    # TODO add permission
-
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
+    # def get(self, request, *args, **kwargs):
+    #     return self.retrieve(request, *args, **kwargs)
 
     def put(self, request, *args, **kwargs):
         if 'banned_until' not in request.data:
@@ -250,6 +220,42 @@ def forum_threads(request, pk):
     threads = Thread.objects.filter(forum=pk)
     serializer = ThreadSerializer(threads, many=True)
     return JsonResponse(serializer.data, safe=False)
+
+
+@api_view(['GET'])
+def forum_latest_thread(request):
+    # latest = Thread.objects.filter(
+    #     forum=OuterRef('pk')
+    # ).order_by(
+    #     '-last_activity'
+    # )
+    # result = Forum.objects.annotate(
+    #     latest=Subquery(latest.values('last_activity')[:1]),
+    #     latest_thread_id=Subquery(latest.values('pk')[:1])
+    # )
+
+    raw_query = """
+    SELECT "forumapp_thread"."forum_id",
+           "forumapp_thread"."id",
+           "forumapp_thread"."name",
+           MAX("forumapp_thread"."last_activity") AS "latest"
+    FROM "forumapp_thread"
+    GROUP BY "forumapp_thread"."forum_id"
+    ORDER BY "forumapp_thread"."forum_id" DESC
+    """
+
+    from django.db import connection
+    cursor = connection.cursor()
+    cursor.execute(raw_query)
+    result = cursor.fetchall()
+
+    latest_threads_by_forum = [{
+        'name': val[2],
+        'id': val[1],
+        'forum': val[0]
+    } for val in result]
+
+    return JsonResponse(latest_threads_by_forum, safe=False)
 
 
 @api_view(['GET'])

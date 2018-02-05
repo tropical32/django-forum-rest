@@ -53,6 +53,7 @@ class Thread(models.Model):
             ('can_pin_threads', 'Can pin threads.')
         ]
         ordering = [
+            '-last_activity',
             'pinned'
         ]
 
@@ -63,6 +64,7 @@ class ThreadResponse(models.Model):
     responder = models.ForeignKey(ForumUser, on_delete=models.CASCADE)
     message = models.TextField(max_length=1000, null=False)
     edited = models.BooleanField(default=False)
+
     # order_in_thread = models.PositiveIntegerField(default=1)
 
     class Meta:

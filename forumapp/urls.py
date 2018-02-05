@@ -43,6 +43,11 @@ urlpatterns = [
     ),
 
     path('rest/user_view/<int:pk>/', views.user_view, name='user-view'),
+    path(
+        'rest/forum_latest/',
+        views.forum_latest_thread,
+        name='rest-latest-thread'
+    ),
 
     path(
         'rest/forum_threads/<int:pk>/',

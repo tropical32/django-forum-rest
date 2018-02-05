@@ -37,3 +37,8 @@ class CanPinThreads(permissions.BasePermission):
             return True
 
         return request.user.has_perm('forumapp.can_pin_threads')
+
+
+class CanBanUsers(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.has_perm('forumapp.can_ban_users')
