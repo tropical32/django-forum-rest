@@ -61,7 +61,7 @@ class Thread(models.Model):
 class ThreadResponse(models.Model):
     thread = models.ForeignKey(Thread, on_delete=models.CASCADE)
     created_datetime = models.DateTimeField(default=timezone.now)
-    responder = models.ForeignKey(ForumUser, on_delete=models.CASCADE)
+    creator = models.ForeignKey(ForumUser, on_delete=models.CASCADE)
     message = models.TextField(max_length=1000, null=False)
     edited = models.BooleanField(default=False)
 

@@ -28,7 +28,8 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
             return True
 
         # Write permissions are only allowed to the owner of the snippet.
-        return obj.creator == request.user
+        forum_user = ForumUser.objects.get(user=request.user)
+        return obj.creator == forum_user
 
 
 class CanPinThreads(permissions.BasePermission):

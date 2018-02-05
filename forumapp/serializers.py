@@ -42,7 +42,7 @@ class ForumSerializer(serializers.ModelSerializer):
 class ThreadResponseSerializer(serializers.ModelSerializer):
     class Meta:
         model = ThreadResponse
-        fields = ('thread', 'message', 'created_datetime', 'id', 'responder')
+        fields = ('thread', 'message', 'created_datetime', 'id', 'creator')
         extra_kwargs = {
             'created_datetime': {'read_only': True},
             'id': {'read_only': True},

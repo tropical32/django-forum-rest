@@ -68,6 +68,11 @@ urlpatterns = [
     ),
 
     path('rest/logout/', views.logout, name='rest-logout'),
+    path(
+        'rest/get_user_id/<str:username>',
+        views.get_user_id,
+        name='rest-get-user-id'
+    ),
 
     # path(
     #     'rest/signup/',
@@ -76,7 +81,11 @@ urlpatterns = [
     # ),
 
     # Authentication
-    path('rest/api-token-auth/', obtain_auth_token, name='rest-api-token-auth'),
+    path(
+        'rest/api-token-auth/',
+        views.CustomObtainToken.as_view(),
+        name='rest-api-token-auth'
+    ),
     # path('api-token-verify/', verify_jwt_token),
 
     # Regular patterns

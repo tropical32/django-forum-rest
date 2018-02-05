@@ -11,10 +11,14 @@ from django.http import HttpResponseRedirect, \
     HttpResponseForbidden, HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
 from django.urls import reverse
-from rest_framework import viewsets, permissions, mixins, generics
+from rest_framework import viewsets, permissions, mixins, generics, parsers, \
+    renderers
+from rest_framework.authtoken.models import Token
+from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from forumapp.forms import ThreadCreateModelForm, ThreadResponseModelForm, \
     ThreadResponseDeleteForm, ThreadDeleteForm, BanUserForm, \
@@ -97,7 +101,7 @@ class ForumUserViewSet(viewsets.ReadOnlyModelViewSet):
             return JsonResponse({'user': 'User does not exist.'}, status=404)
 
         user_responses = ThreadResponse.objects.filter(
-            responder=pk
+            creator=pk
         ).exclude(thread__isnull=True)
 
         user_threads = Thread.objects.filter(
@@ -126,6 +130,33 @@ class ForumUserViewSet(viewsets.ReadOnlyModelViewSet):
             'id': forum_user.id
         })
         # return super().retrieve(request, *args, **kwargs)
+
+
+class CustomObtainToken(APIView):
+    throttle_classes = ()
+    permission_classes = ()
+    parser_classes = (
+        parsers.FormParser,
+        parsers.MultiPartParser,
+        parsers.JSONParser,
+    )
+    renderer_classes = (renderers.JSONRenderer,)
+    serializer_class = AuthTokenSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(
+            data=request.data,
+            context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+        forum_user = ForumUser.objects.get(user=user)
+        return Response({
+            'token': token.key,
+            'user_id': forum_user.id,
+            'username': forum_user.user.username
+        })
 
 
 class ThreadResponseViewSet(viewsets.ModelViewSet):
@@ -161,7 +192,7 @@ class ThreadResponseViewSet(viewsets.ModelViewSet):
 
         response = ThreadResponse.objects.create(
             thread=thread,
-            responder=forum_user,
+            creator=forum_user,
             message=request.data['message'],
         )
 
@@ -220,6 +251,21 @@ def forum_threads(request, pk):
     threads = Thread.objects.filter(forum=pk)
     serializer = ThreadSerializer(threads, many=True)
     return JsonResponse(serializer.data, safe=False)
+
+
+@api_view(["GET"])
+def get_user_id(request, username):
+    try:
+        forum_user = ForumUser.objects.get(user__username=username)
+        return JsonResponse(
+            {'id': forum_user.id, 'username': forum_user.user.username},
+            status=200
+        )
+    except ForumUser.DoesNotExist:
+        return JsonResponse(
+            {'username': ['Specified user is non-existent.']},
+            status=404
+        )
 
 
 @api_view(['GET'])
