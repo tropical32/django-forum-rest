@@ -27,7 +27,8 @@ from forumapp.permissions import IsNotBanned, IsOwnerOrReadOnly, CanPinThreads, 
     CanBanUsers
 from forumapp.serializers import ThreadSerializer, \
     ForumUserSerializer, ThreadResponseSerializer, LikeDislikeSerializer, \
-    ForumSerializer, ForumSectionSerializer
+    ForumSerializer, ForumSectionSerializer, ThreadResponseUpdateSerializer, \
+    ThreadUpdateSerializer
 from .models import Thread, ForumSection, ThreadResponse, Forum, LikeDislike, \
     ForumUser
 
@@ -51,6 +52,14 @@ class ThreadViewSet(viewsets.ModelViewSet):
         IsNotBanned,
         IsOwnerOrReadOnly
     )
+
+    def get_serializer_class(self):
+        serializer_class = ThreadSerializer
+
+        if self.request.method == 'PUT':
+            serializer_class = ThreadUpdateSerializer
+
+        return serializer_class
 
     def create(self, request, *args, **kwargs):
         errors = {}
@@ -168,6 +177,14 @@ class ThreadResponseViewSet(viewsets.ModelViewSet):
         IsNotBanned,
         IsOwnerOrReadOnly
     )
+
+    def get_serializer_class(self):
+        serializer_class = ThreadResponseSerializer
+
+        if self.request.method == 'PUT':
+            serializer_class = ThreadResponseUpdateSerializer
+
+        return serializer_class
 
     def create(self, request, *args, **kwargs):
         errors = {}

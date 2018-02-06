@@ -46,8 +46,20 @@ class ThreadResponseSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'created_datetime': {'read_only': True},
             'id': {'read_only': True},
-            'responder': {'read_only': True}
+            'creator': {'read_only': True}
         }
+
+
+class ThreadUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Thread
+        fields = ('message',)
+
+
+class ThreadResponseUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ThreadResponse
+        fields = ('message',)
 
 
 class ForumUserSerializer(serializers.ModelSerializer):
